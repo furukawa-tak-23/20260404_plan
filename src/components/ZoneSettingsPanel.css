@@ -1,0 +1,119 @@
+.zone-settings-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  background: #1e2a3a;
+  border: 1px solid #2e3f55;
+  border-radius: 8px;
+  z-index: 100;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  min-width: 320px;
+  max-width: 90vw;
+}
+
+.zone-settings-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid #2e3f55;
+  font-size: 13px;
+  color: #c8d8e8;
+  font-weight: 600;
+}
+
+.zone-settings-panel__close {
+  background: none;
+  border: none;
+  color: #7a95b0;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 2px;
+}
+
+.zone-settings-panel__close:hover {
+  color: #c8d8e8;
+}
+
+.zone-settings-panel__body {
+  overflow-x: auto;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.zone-settings-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.zone-settings-table th,
+.zone-settings-table td {
+  padding: 0;
+  text-align: center;
+}
+
+.zone-settings-table__zone-col {
+  min-width: 80px;
+  position: sticky;
+  left: 0;
+  background: #1e2a3a;
+  z-index: 1;
+}
+
+.zone-settings-table__cal-col {
+  min-width: 36px;
+  padding: 8px 4px 4px;
+  vertical-align: bottom;
+}
+
+.zone-settings-table__cal-dot {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin: 0 auto 4px;
+  flex-shrink: 0;
+}
+
+.zone-settings-table__cal-name {
+  display: block;
+  font-size: 10px;
+  color: #7a95b0;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  white-space: nowrap;
+  max-height: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0 auto;
+}
+
+.zone-settings-table__zone-label {
+  position: sticky;
+  left: 0;
+  background: #1e2a3a;
+  padding: 0 10px;
+  border-top: 1px solid #2e3f55;
+}
+
+.zone-settings-table__all-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #c8d8e8;
+  cursor: pointer;
+  white-space: nowrap;
+  padding: 6px 0;
+}
+
+.zone-settings-table__cell {
+  border-top: 1px solid #2e3f55;
+}
+
+.zone-settings-table__cell input[type="checkbox"],
+.zone-settings-table__all-label input[type="checkbox"] {
+  cursor: pointer;
+  width: 14px;
+  height: 14px;
+}

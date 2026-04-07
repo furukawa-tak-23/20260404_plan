@@ -1,0 +1,5 @@
+# このファイルの内容をコピーして .env.local というファイルを作成してください
+# 例: cp config-template.txt .env.local
+
+VITE_SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...

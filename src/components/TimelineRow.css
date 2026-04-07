@@ -1,0 +1,110 @@
+.timeline-row {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 3px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.1s ease;
+  gap: 0;
+}
+
+.timeline-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Today highlight */
+.timeline-row--today {
+  border: 2px solid #ff8c00;
+  border-radius: 4px;
+  background: rgba(255, 140, 0, 0.08);
+  margin: 1px 0;
+}
+
+/* Type column */
+.timeline-row__type {
+  width: 60px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.type-label {
+  font-size: 10px;
+  color: #666;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Date column */
+.timeline-row__date {
+  width: 140px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.date-main {
+  color: #4dd0e1;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.date-day {
+  color: #4dd0e1;
+  font-size: 12px;
+}
+
+.date-day--weekend {
+  color: #f48fb1;
+}
+
+.date-suffix {
+  color: #888;
+  font-size: 12px;
+}
+
+/* Weekend row dim */
+.timeline-row--weekend .date-main {
+  color: #80cbc4;
+  opacity: 0.85;
+}
+
+/* Events column */
+.timeline-row__events {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+/* Granularity-based row heights */
+.timeline-row--day {
+  min-height: 30px;
+}
+
+.timeline-row--week {
+  min-height: 34px;
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.timeline-row--month {
+  min-height: 36px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.timeline-row--quarter {
+  min-height: 38px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.timeline-row--year {
+  min-height: 40px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.timeline-row--decade {
+  min-height: 42px;
+  background: rgba(255, 255, 255, 0.035);
+}

@@ -1,0 +1,53 @@
+.calendar-selector {
+  position: relative;
+}
+
+.calendar-selector__dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  background: #1e2a3a;
+  border: 1px solid #2e3f55;
+  border-radius: 8px;
+  padding: 8px 0;
+  min-width: 220px;
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 100;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.calendar-selector__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.calendar-selector__item:hover {
+  background: #2e3f55;
+}
+
+.calendar-selector__item input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.calendar-selector__color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.calendar-selector__name {
+  font-size: 13px;
+  color: #c8d8e8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
