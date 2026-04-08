@@ -4,7 +4,7 @@ import { useGoogleCalendar, CalendarEvent, CalendarInfo } from '../hooks/useGoog
 import TimelineRowComponent from './TimelineRow';
 import ZoneSettingsPanel from './ZoneSettingsPanel';
 import './Timeline.css';
-import { addYears, subYears } from 'date-fns';
+import { addDays } from 'date-fns';
 
 const ZONES: RowType[] = ['day', 'week', 'month', 'quarter', 'year', 'decade'];
 
@@ -72,8 +72,8 @@ const Timeline: React.FC = () => {
     }
     setEventsLoading(true);
     try {
-      const start = subYears(today, 1);
-      const end = addYears(today, 200);
+      const start = addDays(today, -7);
+      const end = rows.length > 0 ? rows[rows.length - 1].endDate : addDays(today, 365);
       const fetched = await getEvents(start, end, calendarIds);
       setEvents(fetched);
     } catch (err) {
@@ -81,7 +81,7 @@ const Timeline: React.FC = () => {
     } finally {
       setEventsLoading(false);
     }
-  }, [getEvents, today]);
+  }, [getEvents, today, rows]);
 
   useEffect(() => {
     if (isSignedIn && fetchCalendarIds.length > 0) {
@@ -120,9 +120,6 @@ const Timeline: React.FC = () => {
                 </div>
                 <button className="btn btn--secondary" onClick={signOut}>
                   Disconnect Calendar
-                </button>
-                <button className="btn btn--ghost" onClick={() => fetchEvents(fetchCalendarIds)} disabled={eventsLoading}>
-                  ↻ Refresh
                 </button>
               </div>
             </>

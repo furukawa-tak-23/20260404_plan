@@ -46,16 +46,66 @@ export function isWeekendDate(date: Date): boolean {
   return isWeekend(date);
 }
 
+// fromDate から数えて n 番目の日曜日（fromDate 自身が日曜なら 1 番目）
+function getNthSundayFrom(fromDate: Date, n: number): Date {
+  let count = 0;
+  let cursor = startOfDay(fromDate);
+  while (true) {
+    if (getDay(cursor) === 0) {
+      count++;
+      if (count === n) return cursor;
+    }
+    cursor = addDays(cursor, 1);
+  }
+}
+
+// fromDate の月から数えて n 番目の月末
+function getNthMonthEnd(fromDate: Date, n: number): Date {
+  return endOfMonth(addMonths(startOfMonth(fromDate), n - 1));
+}
+
+// fromDate の月から数えて n 番目の「3 の倍数月（3,6,9,12 月）」の月末
+function getNthMultiple3MonthEnd(fromDate: Date, n: number): Date {
+  let count = 0;
+  let cursor = startOfMonth(fromDate);
+  while (true) {
+    if ((cursor.getMonth() + 1) % 3 === 0) {
+      count++;
+      if (count === n) return endOfMonth(cursor);
+    }
+    cursor = addMonths(cursor, 1);
+  }
+}
+
+// fromDate の年から数えて n 番目の年末
+function getNthYearEnd(fromDate: Date, n: number): Date {
+  return endOfYear(new Date(fromDate.getFullYear() + n - 1, 0, 1));
+}
+
+// fromDate の年以降で n 番目の「10 の倍数年」の年末
+function getNthMultiple10YearEnd(fromDate: Date, n: number): Date {
+  const firstYear = Math.ceil(fromDate.getFullYear() / 10) * 10;
+  return endOfYear(new Date(firstYear + (n - 1) * 10, 0, 1));
+}
+
+// fromDate の年以降で n 番目の「100 の倍数年」の年末
+function getNthMultiple100YearEnd(fromDate: Date, n: number): Date {
+  const firstYear = Math.ceil(fromDate.getFullYear() / 100) * 100;
+  return endOfYear(new Date(firstYear + (n - 1) * 100, 0, 1));
+}
+
 export function generateTimelineRows(today: Date): TimelineRow[] {
   const rows: TimelineRow[] = [];
   const todayStart = startOfDay(today);
 
-  // Day rows: from 7 days before today to 12 days after today
-  const dayStart = addDays(todayStart, -7);
-  const dayEnd = addDays(todayStart, 12);
+  // === 日ゾーン ===
+  // 開始: 今日の 7 日前
+  // 終了: 今日から数えて 2 番目の日曜日
+  const dayZoneStart = addDays(todayStart, -7);
+  const dayZoneEnd = getNthSundayFrom(todayStart, 2);
 
-  let cursor = dayStart;
-  while (cursor <= dayEnd) {
+  let cursor = dayZoneStart;
+  while (cursor <= dayZoneEnd) {
     const dayOfMonth = cursor.getDate();
     const month = cursor.getMonth() + 1;
     rows.push({
@@ -69,13 +119,14 @@ export function generateTimelineRows(today: Date): TimelineRow[] {
     cursor = addDays(cursor, 1);
   }
 
-  // Week rows: 13 days after today to 56 days (8 weeks) after today
-  // Start from the Monday of the week containing day+13
-  const weekRangeStart = addDays(todayStart, 13);
-  const weekRangeEnd = addDays(todayStart, 56);
+  // === 週ゾーン ===
+  // 開始: 日ゾーン最終日の翌日（月曜）
+  // 終了: そこから数えて 2 番目の月末
+  const weekZoneStart = addDays(dayZoneEnd, 1);
+  const weekZoneEnd = getNthMonthEnd(weekZoneStart, 2);
 
-  let weekCursor = startOfWeek(weekRangeStart, { weekStartsOn: 1 });
-  while (weekCursor <= weekRangeEnd) {
+  let weekCursor = startOfWeek(weekZoneStart, { weekStartsOn: 1 });
+  while (weekCursor <= weekZoneEnd) {
     const weekEnd = endOfWeek(weekCursor, { weekStartsOn: 1 });
     const month = weekCursor.getMonth() + 1;
     const dayOfMonth = weekCursor.getDate();
@@ -90,20 +141,14 @@ export function generateTimelineRows(today: Date): TimelineRow[] {
     weekCursor = addWeeks(weekCursor, 1);
   }
 
-  // Month rows: ~2 months to ~6 months after today
-  const monthRangeStart = addDays(todayStart, 57);
-  const monthRangeEnd = addMonths(todayStart, 6);
+  // === 月ゾーン ===
+  // 開始: 週ゾーン最終日の翌日（月初）
+  // 終了: そこから数えて 2 番目の「3 の倍数月」の月末
+  const monthZoneStart = addDays(weekZoneEnd, 1);
+  const monthZoneEnd = getNthMultiple3MonthEnd(monthZoneStart, 2);
 
-  let monthCursor = startOfMonth(monthRangeStart);
-  // Make sure we don't overlap with week rows
-  if (monthCursor < monthRangeStart) {
-    monthCursor = startOfMonth(addMonths(monthRangeStart, 1));
-    if (monthCursor > monthRangeStart) {
-      monthCursor = startOfMonth(monthRangeStart);
-    }
-  }
-
-  while (monthCursor <= monthRangeEnd) {
+  let monthCursor = startOfMonth(monthZoneStart);
+  while (monthCursor <= monthZoneEnd) {
     const mEnd = endOfMonth(monthCursor);
     const year = monthCursor.getFullYear();
     const month = monthCursor.getMonth() + 1;
@@ -116,17 +161,14 @@ export function generateTimelineRows(today: Date): TimelineRow[] {
     monthCursor = addMonths(monthCursor, 1);
   }
 
-  // Quarter rows: ~6 months to ~24 months after today
-  const quarterRangeStart = addMonths(todayStart, 6);
-  const quarterRangeEnd = addMonths(todayStart, 24);
+  // === 四半期ゾーン ===
+  // 開始: 月ゾーン最終日の翌日（四半期初）
+  // 終了: そこから数えて 2 番目の年末
+  const quarterZoneStart = addDays(monthZoneEnd, 1);
+  const quarterZoneEnd = getNthYearEnd(quarterZoneStart, 2);
 
-  let quarterCursor = startOfQuarter(quarterRangeStart);
-  // Advance to next quarter if this one starts before range
-  if (quarterCursor < quarterRangeStart) {
-    quarterCursor = startOfQuarter(addQuarters(quarterRangeStart, 1));
-  }
-
-  while (quarterCursor <= quarterRangeEnd) {
+  let quarterCursor = startOfQuarter(quarterZoneStart);
+  while (quarterCursor <= quarterZoneEnd) {
     const qEnd = endOfQuarter(quarterCursor);
     const year = quarterCursor.getFullYear();
     const month = quarterCursor.getMonth() + 1;
@@ -140,16 +182,14 @@ export function generateTimelineRows(today: Date): TimelineRow[] {
     quarterCursor = addQuarters(quarterCursor, 1);
   }
 
-  // Year rows: ~2 years to ~15 years after today
-  const yearRangeStart = addMonths(todayStart, 24);
-  const yearRangeEnd = addYears(todayStart, 15);
+  // === 年ゾーン ===
+  // 開始: 四半期ゾーン最終日の翌日（年初）
+  // 終了: そこから数えて 2 番目の「10 の倍数年」の年末
+  const yearZoneStart = addDays(quarterZoneEnd, 1);
+  const yearZoneEnd = getNthMultiple10YearEnd(yearZoneStart, 2);
 
-  let yearCursor = startOfYear(yearRangeStart);
-  if (yearCursor < yearRangeStart) {
-    yearCursor = startOfYear(addYears(yearRangeStart, 1));
-  }
-
-  while (yearCursor <= yearRangeEnd) {
+  let yearCursor = startOfYear(yearZoneStart);
+  while (yearCursor <= yearZoneEnd) {
     const yEnd = endOfYear(yearCursor);
     rows.push({
       type: 'year',
@@ -160,27 +200,24 @@ export function generateTimelineRows(today: Date): TimelineRow[] {
     yearCursor = addYears(yearCursor, 1);
   }
 
-  // Decade rows: ~15 years to 200 years after today
-  const decadeRangeStart = addYears(todayStart, 15);
-  const decadeRangeEnd = addYears(todayStart, 200);
+  // === 10 年ゾーン ===
+  // 開始: 年ゾーン最終日の翌日
+  // 終了: そこから数えて 2 番目の「100 の倍数年」の年末
+  const decadeZoneStart = addDays(yearZoneEnd, 1);
+  const decadeZoneEnd = getNthMultiple100YearEnd(decadeZoneStart, 2);
 
-  // Find the start of the first decade period
-  const firstDecadeYear = Math.ceil(decadeRangeStart.getFullYear() / 10) * 10;
-  let decadeCursor = new Date(firstDecadeYear, 0, 1);
-  if (decadeCursor < decadeRangeStart) {
-    decadeCursor = new Date(firstDecadeYear + 10, 0, 1);
-  }
-
-  while (decadeCursor <= decadeRangeEnd) {
-    const decadeEnd = new Date(decadeCursor.getFullYear() + 10, 0, 0);
+  let decadeCursor = decadeZoneStart;
+  while (decadeCursor <= decadeZoneEnd) {
+    const year = decadeCursor.getFullYear();
+    const decadeEnd = endOfYear(new Date(year + 9, 0, 1));
     rows.push({
       type: 'decade',
       startDate: decadeCursor,
       endDate: decadeEnd,
-      label: `${decadeCursor.getFullYear()}`,
+      label: `${year}`,
       suffix: '〜',
     });
-    decadeCursor = new Date(decadeCursor.getFullYear() + 10, 0, 1);
+    decadeCursor = new Date(year + 10, 0, 1);
   }
 
   return rows;
