@@ -18,26 +18,45 @@ const Timeline: React.FC = () => {
   const [eventsLoading, setEventsLoading] = useState(false);
   const [pastCollapsed, setPastCollapsed] = useState(true);
   const [calendars, setCalendars] = useState<CalendarInfo[]>([]);
-  const [zoneSelection, setZoneSelection] = useState<Record<RowType, string[]>>({
-    day: [], week: [], month: [], quarter: [], year: [], decade: [],
+  const [zoneSelection, setZoneSelection] = useState<Record<RowType, string[]>>(() => {
+    try {
+      const saved = localStorage.getItem('zoneSelection');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return { day: [], week: [], month: [], quarter: [], year: [], decade: [] };
   });
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
     if (!isSignedIn) {
-      setCalendars([]);
-      setZoneSelection({ day: [], week: [], month: [], quarter: [], year: [], decade: [] });
-      setEvents([]);
+      if (!isLoading) {
+        setCalendars([]);
+        setEvents([]);
+      }
       return;
     }
     getCalendars().then(list => {
       setCalendars(list);
       const allIds = list.map(c => c.id);
-      const defaultSelection = {} as Record<RowType, string[]>;
-      for (const zone of ZONES) defaultSelection[zone] = allIds;
-      setZoneSelection(defaultSelection);
+      const savedKnown: string[] = JSON.parse(localStorage.getItem('knownCalendarIds') ?? '[]');
+      const trulyNewIds = allIds.filter(id => !savedKnown.includes(id));
+      localStorage.setItem('knownCalendarIds', JSON.stringify([...new Set([...savedKnown, ...allIds])]));
+      setZoneSelection(prev => {
+        const merged = { ...prev };
+        for (const zone of ZONES) {
+          const existing = merged[zone] ?? [];
+          merged[zone] = [...existing.filter(id => allIds.includes(id)), ...trulyNewIds];
+        }
+        return merged;
+      });
     });
-  }, [isSignedIn, getCalendars]);
+  }, [isSignedIn, isLoading, getCalendars]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('zoneSelection', JSON.stringify(zoneSelection));
+    } catch {}
+  }, [zoneSelection]);
 
   // フェッチ対象：全ゾーンの選択の和集合
   const fetchCalendarIds = useMemo(() => {
