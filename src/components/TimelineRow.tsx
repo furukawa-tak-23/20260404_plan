@@ -52,7 +52,7 @@ const TimelineRowComponent: React.FC<TimelineRowProps> = ({ row, events, calenda
         )}
       </div>
       <div className="timeline-row__events">
-        <EventBar events={events} calendars={calendars} visibleCalendarIds={visibleCalendarIds} startDate={row.startDate} endDate={row.endDate} />
+        <EventBar events={events} calendars={calendars} visibleCalendarIds={visibleCalendarIds} startDate={row.startDate} endDate={row.endDate} rowType={row.type} />
       </div>
     </div>
   );
