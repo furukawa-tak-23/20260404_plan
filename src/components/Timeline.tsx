@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { generateTimelineRows, RowType } from '../utils/timelineUtils';
 import { useGoogleCalendar, CalendarEvent, CalendarInfo } from '../hooks/useGoogleCalendar';
 import TimelineRowComponent from './TimelineRow';
 import ZoneSettingsPanel from './ZoneSettingsPanel';
 import './Timeline.css';
 import { addDays } from 'date-fns';
+import { supabase } from '../lib/supabase';
 
 const ZONES: RowType[] = ['day', 'week', 'month', 'quarter', 'year', 'decade'];
 
@@ -18,14 +19,62 @@ const Timeline: React.FC = () => {
   const [eventsLoading, setEventsLoading] = useState(false);
   const [pastCollapsed, setPastCollapsed] = useState(true);
   const [calendars, setCalendars] = useState<CalendarInfo[]>([]);
-  const [zoneSelection, setZoneSelection] = useState<Record<RowType, string[]>>(() => {
-    try {
-      const saved = localStorage.getItem('zoneSelection');
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return { day: [], week: [], month: [], quarter: [], year: [], decade: [] };
-  });
+  const [zoneSelection, setZoneSelection] = useState<Record<RowType, string[]>>(
+    { day: [], week: [], month: [], quarter: [], year: [], decade: [] }
+  );
+  const [knownCalendarIds, setKnownCalendarIds] = useState<string[]>([]);
+  const knownCalendarIdsRef = useRef<string[]>([]);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
+
+  // サインイン時にユーザーIDを取得
+  useEffect(() => {
+    if (!isSignedIn) {
+      setUserId(null);
+      setSettingsLoaded(false);
+      return;
+    }
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUserId(user?.id ?? null);
+    });
+  }, [isSignedIn]);
+
+  // Supabaseから設定を読み込む
+  useEffect(() => {
+    if (!userId) return;
+    supabase
+      .from('calendar_settings')
+      .select('zone_selection, known_calendar_ids')
+      .eq('user_id', userId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setZoneSelection(data.zone_selection);
+          setKnownCalendarIds(data.known_calendar_ids ?? []);
+          knownCalendarIdsRef.current = data.known_calendar_ids ?? [];
+        }
+        setSettingsLoaded(true);
+      });
+  }, [userId]);
+
+  // knownCalendarIds を ref に同期（getCalendars effect 内で参照するため）
+  useEffect(() => {
+    knownCalendarIdsRef.current = knownCalendarIds;
+  }, [knownCalendarIds]);
+
+  // 設定変更をSupabaseに保存
+  useEffect(() => {
+    if (!userId || !settingsLoaded) return;
+    supabase.from('calendar_settings').upsert({
+      user_id: userId,
+      zone_selection: zoneSelection,
+      known_calendar_ids: knownCalendarIds,
+      updated_at: new Date().toISOString(),
+    }).then(({ error }) => {
+      if (error) console.error('calendar_settings upsert failed:', error);
+    });
+  }, [zoneSelection, knownCalendarIds, userId, settingsLoaded]);
 
   useEffect(() => {
     if (!isSignedIn) {
@@ -35,12 +84,13 @@ const Timeline: React.FC = () => {
       }
       return;
     }
+    if (!settingsLoaded) return;
     getCalendars().then(list => {
       setCalendars(list);
       const allIds = list.map(c => c.id);
-      const savedKnown: string[] = JSON.parse(localStorage.getItem('knownCalendarIds') ?? '[]');
+      const savedKnown = knownCalendarIdsRef.current;
       const trulyNewIds = allIds.filter(id => !savedKnown.includes(id));
-      localStorage.setItem('knownCalendarIds', JSON.stringify([...new Set([...savedKnown, ...allIds])]));
+      setKnownCalendarIds(prev => [...new Set([...prev, ...allIds])]);
       setZoneSelection(prev => {
         const merged = { ...prev };
         for (const zone of ZONES) {
@@ -50,13 +100,7 @@ const Timeline: React.FC = () => {
         return merged;
       });
     });
-  }, [isSignedIn, isLoading, getCalendars]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('zoneSelection', JSON.stringify(zoneSelection));
-    } catch {}
-  }, [zoneSelection]);
+  }, [isSignedIn, isLoading, getCalendars, settingsLoaded]);
 
   // フェッチ対象：全ゾーンの選択の和集合
   const fetchCalendarIds = useMemo(() => {
