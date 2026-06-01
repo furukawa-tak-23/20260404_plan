@@ -1,4 +1,5 @@
 import React from 'react';
+import { format, addDays } from 'date-fns';
 import { TimelineRow as ITimelineRow, getRowTypeLabel, isWeekendDate } from '../utils/timelineUtils';
 import { CalendarEvent, CalendarInfo } from '../hooks/useGoogleCalendar';
 import EventBar from './EventBar';
@@ -15,6 +16,12 @@ const TimelineRowComponent: React.FC<TimelineRowProps> = ({ row, events, calenda
   const typeLabel = getRowTypeLabel(row.type);
   const isDay = row.type === 'day';
   const weekend = isDay && isWeekendDate(row.startDate);
+
+  const handleAddEvent = () => {
+    const startStr = format(row.startDate, 'yyyyMMdd');
+    const endStr = format(addDays(row.startDate, 1), 'yyyyMMdd');
+    window.open(`https://calendar.google.com/calendar/r/eventedit?dates=${startStr}/${endStr}`, '_blank');
+  };
 
   const rowClasses = [
     'timeline-row',
@@ -52,7 +59,7 @@ const TimelineRowComponent: React.FC<TimelineRowProps> = ({ row, events, calenda
         )}
       </div>
       <div className="timeline-row__events">
-        <EventBar events={events} calendars={calendars} visibleCalendarIds={visibleCalendarIds} startDate={row.startDate} endDate={row.endDate} rowType={row.type} />
+        <EventBar events={events} calendars={calendars} visibleCalendarIds={visibleCalendarIds} startDate={row.startDate} endDate={row.endDate} rowType={row.type} onAddEvent={handleAddEvent} />
       </div>
     </div>
   );

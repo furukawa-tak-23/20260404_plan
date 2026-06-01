@@ -79,6 +79,29 @@
   align-items: center;
 }
 
+.timeline-row__add-btn {
+  opacity: 0;
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid #555;
+  color: #888;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 1px 5px;
+  transition: opacity 0.1s ease, color 0.1s ease, border-color 0.1s ease;
+}
+
+.timeline-row:hover .timeline-row__add-btn {
+  opacity: 1;
+}
+
+.timeline-row__add-btn:hover {
+  color: #4dd0e1;
+  border-color: #4dd0e1;
+}
+
 /* Granularity-based row heights */
 .timeline-row--day {
   min-height: 30px;

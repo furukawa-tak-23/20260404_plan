@@ -103,9 +103,10 @@ interface EventBarProps {
   startDate: Date;
   endDate: Date;
   rowType: string;
+  onAddEvent?: () => void;
 }
 
-const EventBar: React.FC<EventBarProps> = ({ events, calendars, visibleCalendarIds, startDate, endDate, rowType }) => {
+const EventBar: React.FC<EventBarProps> = ({ events, calendars, visibleCalendarIds, startDate, endDate, rowType, onAddEvent }) => {
   const rangeEvents = sortEvents(
     eventsInRange(events, startDate, endDate).filter(ev =>
       visibleCalendarIds.includes(ev.calendarId)
@@ -113,7 +114,13 @@ const EventBar: React.FC<EventBarProps> = ({ events, calendars, visibleCalendarI
   );
 
   if (rangeEvents.length === 0) {
-    return <div className="event-bar-area" />;
+    return (
+      <div className="event-bar-area">
+        {onAddEvent && (
+          <button className="timeline-row__add-btn" onClick={onAddEvent} title="Add event">+</button>
+        )}
+      </div>
+    );
   }
 
   const isDay = rowType === 'day';
@@ -160,6 +167,9 @@ const EventBar: React.FC<EventBarProps> = ({ events, calendars, visibleCalendarI
           );
         }
       })}
+      {onAddEvent && (
+        <button className="timeline-row__add-btn" onClick={onAddEvent} title="Add event">+</button>
+      )}
     </div>
   );
 };
