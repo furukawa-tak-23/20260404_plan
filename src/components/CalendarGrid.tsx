@@ -12,7 +12,7 @@ const COLOR_MAP: Record<string, string> = {
   '9': '#3f51b5', '10': '#0b8043', '11': '#d60000',
 };
 
-const DOW = ['日', '月', '火', '水', '木', '金', '土'];
+const DOW = ['月', '火', '水', '木', '金', '土', '日'];
 
 function parseDate(str: string): Date {
   if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
@@ -58,15 +58,15 @@ const CalendarGrid: React.FC<Props> = ({ events, calendars, visibleCalendarIds }
         const ms = startOfMonth(month);
         const me = endOfMonth(month);
         const days = eachDayOfInterval({
-          start: startOfWeek(ms, { weekStartsOn: 0 }),
-          end: endOfWeek(me, { weekStartsOn: 0 }),
+          start: startOfWeek(ms, { weekStartsOn: 1 }),
+          end: endOfWeek(me, { weekStartsOn: 1 }),
         });
         return (
           <div key={mi} className="cg-month">
             <div className="cg-month__title">{format(month, 'yyyy年M月')}</div>
             <div className="cg-month__grid">
               {DOW.map((d, di) => (
-                <div key={d} className={`cg-dow${di === 0 ? ' cg-dow--sun' : di === 6 ? ' cg-dow--sat' : ''}`}>{d}</div>
+                <div key={d} className={`cg-dow${di === 5 ? ' cg-dow--sat' : di === 6 ? ' cg-dow--sun' : ''}`}>{d}</div>
               ))}
               {days.map((day, di) => {
                 const out = !isSameMonth(day, month);
