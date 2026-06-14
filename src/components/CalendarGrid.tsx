@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import { CalendarEvent, CalendarInfo } from '../hooks/useGoogleCalendar';
 import {
-  addMonths, addDays, startOfMonth, endOfMonth,
-  startOfWeek, endOfWeek, isToday, format,
+  addMonths, startOfMonth, endOfMonth, eachDayOfInterval,
+  startOfWeek, endOfWeek, isSameMonth, isToday, format,
 } from 'date-fns';
 import './CalendarGrid.css';
 
@@ -13,10 +13,6 @@ const COLOR_MAP: Record<string, string> = {
 };
 
 const DOW = ['月', '火', '水', '木', '金', '土', '日'];
-
-type Row =
-  | { type: 'header'; label: string }
-  | { type: 'week'; days: Date[] };
 
 function parseDate(str: string): Date {
   if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
@@ -39,32 +35,11 @@ interface Props {
 
 const CalendarGrid: React.FC<Props> = ({ events, calendars, visibleCalendarIds }) => {
   const today = useMemo(() => new Date(), []);
-  const monthStart = useMemo(() => startOfMonth(today), [today]);
 
-  const rows = useMemo((): Row[] => {
-    const result: Row[] = [];
-    const end = endOfWeek(endOfMonth(addMonths(today, 11)), { weekStartsOn: 1 });
-    let current = startOfWeek(monthStart, { weekStartsOn: 1 });
-    const seenMonths = new Set<string>();
-
-    while (current <= end) {
-      const week = Array.from({ length: 7 }, (_, i) => addDays(current, i));
-
-      const firstOfMonth = week.find(d => d.getDate() === 1);
-      if (firstOfMonth) {
-        const key = format(firstOfMonth, 'yyyy-MM');
-        if (!seenMonths.has(key)) {
-          seenMonths.add(key);
-          result.push({ type: 'header', label: format(firstOfMonth, 'yyyy年M月') });
-        }
-      }
-
-      result.push({ type: 'week', days: week });
-      current = addDays(current, 7);
-    }
-
-    return result;
-  }, [today, monthStart]);
+  const months = useMemo(
+    () => Array.from({ length: 12 }, (_, i) => addMonths(today, i)),
+    [today],
+  );
 
   const filtered = useMemo(
     () => events.filter(ev => visibleCalendarIds.includes(ev.calendarId)),
@@ -78,31 +53,28 @@ const CalendarGrid: React.FC<Props> = ({ events, calendars, visibleCalendarIds }
   };
 
   return (
-    <div className="cg-wrap">
-      <div className="cg-dow-header">
-        {DOW.map((d, di) => (
-          <div key={d} className={`cg-dow${di === 5 ? ' cg-dow--sat' : di === 6 ? ' cg-dow--sun' : ''}`}>{d}</div>
-        ))}
-      </div>
-      <div className="cg-weeks">
-        {rows.map((row, ri) => {
-          if (row.type === 'header') {
-            return (
-              <div key={`h-${ri}`} className="cg-month-label">{row.label}</div>
-            );
-          }
-          return (
-            <React.Fragment key={`w-${ri}`}>
-              {row.days.map((day, di) => {
+    <div className="cg-grid">
+      {months.map((month, mi) => {
+        const ms = startOfMonth(month);
+        const me = endOfMonth(month);
+        const days = eachDayOfInterval({
+          start: startOfWeek(ms, { weekStartsOn: 1 }),
+          end: endOfWeek(me, { weekStartsOn: 1 }),
+        });
+        return (
+          <div key={mi} className="cg-month">
+            <div className="cg-month__title">{format(month, 'yyyy年M月')}</div>
+            <div className="cg-month__grid">
+              {DOW.map((d, di) => (
+                <div key={d} className={`cg-dow${di === 5 ? ' cg-dow--sat' : di === 6 ? ' cg-dow--sun' : ''}`}>{d}</div>
+              ))}
+              {days.map((day, di) => {
+                const out = !isSameMonth(day, month);
                 const tod = isToday(day);
-                const isOut = day < monthStart;
                 const dow = day.getDay();
-                const dayEvs = isOut ? [] : eventsForDay(day);
+                const dayEvs = out ? [] : eventsForDay(day);
                 return (
-                  <div
-                    key={di}
-                    className={`cg-day${tod ? ' cg-day--today' : ''}${isOut ? ' cg-day--out' : ''}`}
-                  >
+                  <div key={di} className={`cg-day${out ? ' cg-day--out' : ''}${tod ? ' cg-day--today' : ''}`}>
                     <span className={`cg-day__num${dow === 0 ? ' cg-day__num--sun' : dow === 6 ? ' cg-day__num--sat' : ''}`}>
                       {format(day, 'd')}
                     </span>
@@ -127,10 +99,10 @@ const CalendarGrid: React.FC<Props> = ({ events, calendars, visibleCalendarIds }
                   </div>
                 );
               })}
-            </React.Fragment>
-          );
-        })}
-      </div>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };
