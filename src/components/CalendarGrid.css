@@ -17,7 +17,6 @@
 
 .cg-month {
   min-width: 0;
-  overflow: hidden;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 10px;
@@ -51,6 +50,7 @@
 
 .cg-day {
   min-height: 48px;
+  overflow: hidden;
   padding: 2px 1px;
   border-radius: 4px;
 }
