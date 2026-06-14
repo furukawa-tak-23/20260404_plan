@@ -1,41 +1,39 @@
-.cg-grid {
+/* 連続カレンダー */
+.cg-wrap {
+  padding: 0 16px 32px;
+  overflow-x: hidden;
+}
+
+.cg-dow-header {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-rows: repeat(4, auto);
-  grid-auto-flow: column;
-  gap: 16px;
-  padding: 16px;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  position: sticky;
+  top: 0;
+  background: #16213e;
+  z-index: 1;
+  padding: 8px 0 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 2px;
 }
 
-@media (max-width: 640px) {
-  .cg-grid {
-    grid-template-columns: 1fr;
-    grid-template-rows: none;
-    grid-auto-flow: row;
-  }
+.cg-weeks {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
 }
 
-.cg-month {
-  min-width: 0;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 10px;
-  padding: 12px 10px;
-}
-
-.cg-month__title {
+.cg-month-label {
+  grid-column: 1 / -1;
   font-size: 13px;
   font-weight: 600;
   color: #4dd0e1;
-  text-align: center;
-  margin-bottom: 8px;
+  padding: 16px 2px 6px;
   letter-spacing: 0.04em;
+  border-top: 1px solid rgba(77, 208, 225, 0.15);
 }
 
-.cg-month__grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 1px;
+.cg-month-label:first-child {
+  border-top: none;
+  padding-top: 8px;
 }
 
 .cg-dow {
@@ -49,14 +47,14 @@
 .cg-dow--sat { color: #64b5f6; }
 
 .cg-day {
-  min-height: 48px;
+  min-height: 52px;
   overflow: hidden;
   padding: 2px 1px;
-  border-radius: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .cg-day--out {
-  opacity: 0.18;
+  opacity: 0.2;
 }
 
 .cg-day--today .cg-day__num {
