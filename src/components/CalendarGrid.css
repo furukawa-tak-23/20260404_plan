@@ -7,6 +7,14 @@
   padding: 16px;
 }
 
+@media (max-width: 640px) {
+  .cg-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    grid-auto-flow: row;
+  }
+}
+
 .cg-month {
   min-width: 0;
   background: rgba(255, 255, 255, 0.04);
