@@ -3,7 +3,10 @@ import { generateTimelineRows, RowType } from '../utils/timelineUtils';
 import { useGoogleCalendar, CalendarEvent, CalendarInfo } from '../hooks/useGoogleCalendar';
 import TimelineRowComponent from './TimelineRow';
 import ZoneSettingsPanel from './ZoneSettingsPanel';
+import CalendarSelector from './CalendarSelector';
+import CalendarGrid from './CalendarGrid';
 import './Timeline.css';
+import './CalendarGrid.css';
 import { addDays } from 'date-fns';
 import { supabase } from '../lib/supabase';
 
@@ -28,6 +31,8 @@ const Timeline: React.FC = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const settingsLoadedRef = useRef(false);
+  const [view, setView] = useState<'timeline' | 'calendar'>('timeline');
+  const [calGridIds, setCalGridIds] = useState<string[]>([]);
 
   // サインイン時にユーザーIDを取得
   useEffect(() => {
@@ -96,6 +101,7 @@ const Timeline: React.FC = () => {
     getCalendars().then(list => {
       setCalendars(list);
       const allIds = list.map(c => c.id);
+      setCalGridIds(prev => prev.length > 0 ? prev : allIds);
       const savedKnown = knownCalendarIdsRef.current;
       const trulyNewIds = allIds.filter(id => !savedKnown.includes(id));
       setKnownCalendarIds(prev => [...new Set([...prev, ...allIds])]);
@@ -157,19 +163,28 @@ const Timeline: React.FC = () => {
               )}
               <div className="auth-signed-in">
                 {eventsLoading && <span className="auth-loading">Syncing...</span>}
-                <div style={{ position: 'relative' }}>
-                  <button className="btn btn--ghost" onClick={() => setSettingsOpen(v => !v)}>
-                    カレンダー設定
-                  </button>
-                  {settingsOpen && (
-                    <ZoneSettingsPanel
-                      calendars={calendars}
-                      zoneSelection={zoneSelection}
-                      onChange={setZoneSelection}
-                      onClose={() => setSettingsOpen(false)}
-                    />
-                  )}
-                </div>
+                {view === 'timeline' && (
+                  <div style={{ position: 'relative' }}>
+                    <button className="btn btn--ghost" onClick={() => setSettingsOpen(v => !v)}>
+                      カレンダー設定
+                    </button>
+                    {settingsOpen && (
+                      <ZoneSettingsPanel
+                        calendars={calendars}
+                        zoneSelection={zoneSelection}
+                        onChange={setZoneSelection}
+                        onClose={() => setSettingsOpen(false)}
+                      />
+                    )}
+                  </div>
+                )}
+                {view === 'calendar' && isSignedIn && calendars.length > 0 && (
+                  <CalendarSelector
+                    calendars={calendars}
+                    selectedIds={calGridIds}
+                    onChange={setCalGridIds}
+                  />
+                )}
                 <button className="btn btn--secondary" onClick={signOut}>
                   Disconnect Calendar
                 </button>
@@ -183,29 +198,55 @@ const Timeline: React.FC = () => {
         </div>
       </header>
 
-      <div className="timeline-body">
-        {/* Collapsed past section */}
-        <div
-          className={`timeline-past-section${pastCollapsed ? '' : ' timeline-past-section--expanded'}`}
-          onClick={() => setPastCollapsed((v) => !v)}
+      {/* タブ */}
+      <div className="view-tabs">
+        <button
+          className={`view-tab${view === 'timeline' ? ' view-tab--active' : ''}`}
+          onClick={() => setView('timeline')}
         >
-          <span className="past-section-icon">{pastCollapsed ? '▶' : '▼'}</span>
-          <span className="past-section-label">1週間前以前</span>
-        </div>
-
-        {/* Timeline rows */}
-        <div className="timeline-rows">
-          {rows.map((row) => (
-            <TimelineRowComponent
-              key={`${row.type}-${row.startDate.toISOString()}`}
-              row={row}
-              events={events}
-              calendars={calendars}
-              visibleCalendarIds={zoneSelection[row.type] ?? []}
-            />
-          ))}
-        </div>
+          タイムライン
+        </button>
+        <button
+          className={`view-tab${view === 'calendar' ? ' view-tab--active' : ''}`}
+          onClick={() => setView('calendar')}
+        >
+          カレンダー
+        </button>
       </div>
+
+      {view === 'timeline' ? (
+        <div className="timeline-body">
+          {/* Collapsed past section */}
+          <div
+            className={`timeline-past-section${pastCollapsed ? '' : ' timeline-past-section--expanded'}`}
+            onClick={() => setPastCollapsed((v) => !v)}
+          >
+            <span className="past-section-icon">{pastCollapsed ? '▶' : '▼'}</span>
+            <span className="past-section-label">1週間前以前</span>
+          </div>
+
+          {/* Timeline rows */}
+          <div className="timeline-rows">
+            {rows.map((row) => (
+              <TimelineRowComponent
+                key={`${row.type}-${row.startDate.toISOString()}`}
+                row={row}
+                events={events}
+                calendars={calendars}
+                visibleCalendarIds={zoneSelection[row.type] ?? []}
+              />
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="timeline-body">
+          <CalendarGrid
+            events={events}
+            calendars={calendars}
+            visibleCalendarIds={calGridIds}
+          />
+        </div>
+      )}
     </div>
   );
 };
