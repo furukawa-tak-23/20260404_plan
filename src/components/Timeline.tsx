@@ -27,12 +27,14 @@ const Timeline: React.FC = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const settingsLoadedRef = useRef(false);
 
   // サインイン時にユーザーIDを取得
   useEffect(() => {
     if (!isSignedIn) {
       setUserId(null);
       setSettingsLoaded(false);
+      settingsLoadedRef.current = false;
       return;
     }
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -48,12 +50,17 @@ const Timeline: React.FC = () => {
       .select('zone_selection, known_calendar_ids')
       .eq('user_id', userId)
       .maybeSingle()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) {
+          console.error('calendar_settings load failed:', error);
+          return;
+        }
         if (data) {
           setZoneSelection(data.zone_selection);
           setKnownCalendarIds(data.known_calendar_ids ?? []);
           knownCalendarIdsRef.current = data.known_calendar_ids ?? [];
         }
+        settingsLoadedRef.current = true;
         setSettingsLoaded(true);
       });
   }, [userId]);
@@ -63,9 +70,9 @@ const Timeline: React.FC = () => {
     knownCalendarIdsRef.current = knownCalendarIds;
   }, [knownCalendarIds]);
 
-  // 設定変更をSupabaseに保存
+  // 設定変更をSupabaseに保存（settingsLoadedRef でガード：DB読み込み前には保存しない）
   useEffect(() => {
-    if (!userId || !settingsLoaded) return;
+    if (!userId || !settingsLoadedRef.current) return;
     supabase.from('calendar_settings').upsert({
       user_id: userId,
       zone_selection: zoneSelection,
@@ -74,7 +81,8 @@ const Timeline: React.FC = () => {
     }).then(({ error }) => {
       if (error) console.error('calendar_settings upsert failed:', error);
     });
-  }, [zoneSelection, knownCalendarIds, userId, settingsLoaded]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoneSelection, knownCalendarIds, userId]);
 
   useEffect(() => {
     if (!isSignedIn) {
